@@ -2,6 +2,7 @@ using Microsoft.Playwright;
 using Microsoft.Playwright.NUnit;
 using NUnit.Framework;
 using PlaywrightTests.Pages;
+using System.Text.RegularExpressions;
 
 namespace PlaywrightTests.Tests;
 
@@ -15,34 +16,39 @@ public class AssetWorkflowTest : PageTest
         var loginPage = new LoginPage(Page);
         var assetPage = new AssetPage(Page);
 
-        // Step 1: Login
+        //Login
         await loginPage.LoginAsync("admin", "password");
         bool isDashboardDisplayed = await loginPage.IsDashboardDisplayed();
         Assert.That(isDashboardDisplayed, Is.True, "Dashboard is not displayed after login.");
 
-        // Step 2: Navigate to Asset Creation
+        //Navigate to Asset Creation
         await assetPage.NavigateToCreateAssetAsync();
 
-        // Step 3: Fill Asset Details and Save
-        await assetPage.FillAssetDetailsAsync("Apple macbook 13", "Abc Xyz");
+        //Fill Asset Details and Save
+        await assetPage.FillAssetDetailsAsync();
         await assetPage.SaveAssetAsync();
 
-        // Step 4: Verify if the asset was created successfully
-        // bool isAssetCreated = await assetPage.IsAssetCreatedAsync();
-        // Assert.That(isAssetCreated, Is.True, "Asset was not created successfully.");
+        var successAlertLocator = Page.Locator("div.alert-success");
+        await Expect(successAlertLocator).ToHaveTextAsync(new System.Text.RegularExpressions.Regex("Success:"));
+        await assetPage.ClickViewLinkAsync();
 
-        var successAlert = Page.Locator("div.alert.alert-success.fade.in");
-        await successAlert.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        // Locate the status and user elements
+        var statusLocator = Page.Locator("div.col-md-9 >> text='Ready to Deploy'");
+        var userLocator = Page.Locator("div.col-md-9 >> a[href*='/users/64']");
+        var modelLocator = Page.Locator("div.col-md-9 >> a[href*='/models/26']");
+        var historyLocator = Page.Locator("a[href='#history'] >> text='History'");
 
-        // Step 5: Extract Asset Tag and View Link
-        var (assetTag, viewLink) = await assetPage.ExtractAssetTagAndUrlFromSuccessAlertAsync();
-        Assert.That(assetTag, Is.Not.Empty, "Asset tag is empty.");
-        await viewLink.ClickAsync();
+        await Expect(statusLocator).ToHaveTextAsync(new Regex("Ready to Deploy"));
+        await Expect(userLocator).ToHaveTextAsync(new Regex("Abc Xyz"));
+        await Expect(modelLocator).ToHaveTextAsync(new Regex("Apple macbook 13"));
+        await Expect(historyLocator).ToHaveTextAsync(new Regex("History"));
+        await historyLocator.ClickAsync();
 
-        // Step 6: Verify Asset Details (Status, User, Model)
-        await assetPage.VerifyAssetDetailsAsync("Ready to Deploy", "Abc Xyz", "Apple macbook 13");
 
-        // Step 7: Verify History Details (User and Checkout Text)
-        await assetPage.VerifyUserAndCheckoutTextAsync("Abc Xyz", "Checked out on asset creation");
+        var userInHistoryLocator = Page.Locator("td >> a[href*='/users/64'] >> text='Abc Xyz'");
+        await Expect(userInHistoryLocator).ToHaveTextAsync(new Regex("Abc Xyz"));
+
+        var checkoutTextLocator = Page.Locator("td >> text='Checked out on asset creation'");
+        await Expect(checkoutTextLocator).ToHaveTextAsync(new Regex("Checked out on asset creation"));
     }
 }

@@ -28,25 +28,44 @@ public class AssetPage
         await _page.WaitForURLAsync("https://demo.snipeitapp.com/hardware/create");
     }
 
-    public async Task FillAssetDetailsAsync(string modelName, string userName)
+    public async Task FillAssetDetailsAsync()
     {
-        // Select model
+        // wait for the "Create Asset" text to be visible to ensure the page has loaded
+        var createAssetText = _page.Locator("h1.pagetitle", new() { HasText = "Create Asset" });
+        await createAssetText.WaitForAsync(new() { State = WaitForSelectorState.Visible });
+
+        //select model
         var modelDropdown = _page.Locator("#select2-model_select_id-container");
         await modelDropdown.ClickAsync();
-        var searchInput = _page.Locator("span.select2-search.select2-search--dropdown input.select2-search__field");
-        await searchInput.FillAsync(modelName);
-        await _page.Locator("li.select2-results__option", new() { HasText = modelName }).ClickAsync();
 
-        // Select status
+        var searchInput = _page.Locator("span.select2-search.select2-search--dropdown input.select2-search__field");
+        await searchInput.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 8000 });
+
+        await searchInput.FillAsync("Apple macbook 13");
+
+        var searchResults = _page.Locator("ul.select2-results__options");
+        await searchResults.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 6000 });
+
+        var appleMacbookOption = _page.Locator("li.select2-results__option", new() { HasText = "CLaptops - Apple macbook 13" });
+        await appleMacbookOption.ClickAsync();
+
+
+        //Select Ready to deploy
         var statusDropdown = _page.Locator("#select2-status_select_id-container");
         await statusDropdown.ClickAsync();
-        await _page.Locator("li.select2-results__option", new() { HasText = "Ready to Deploy" }).ClickAsync();
+        var dropdownOptions = _page.Locator("ul.select2-results__options");
+        await dropdownOptions.WaitForAsync(new() { State = WaitForSelectorState.Visible });
+        var readyToDeployOption = _page.Locator("li.select2-results__option", new() { HasText = "Ready to Deploy" });
+        await readyToDeployOption.ClickAsync();
 
-        // Assign user
+
+        // Assign the asset to a random user
         var userDropdown = _page.Locator("#select2-assigned_user_select-container");
         await userDropdown.ClickAsync();
-        await _page.Locator(".select2-search__field").FillAsync("Abc");
-        await _page.Locator("li.select2-results__option", new() { HasText = "Abc, Xyz (Abc)" }).ClickAsync();
+        var userSearchInput = _page.Locator(".select2-search__field");
+        await userSearchInput.FillAsync("Abc");
+        var userOption = _page.Locator("li.select2-results__option", new() { HasText = "Abc, Xyz (Abc)" });
+        await userOption.ClickAsync();
     }
 
     public async Task SaveAssetAsync()
@@ -75,35 +94,11 @@ public class AssetPage
         return (assetTag, viewLink); // Returning assetTag and the locator for the view link
     }
 
-    // New method to check status, user, model, and history
-    public async Task VerifyAssetDetailsAsync(string expectedStatus, string expectedUser, string expectedModel)
+    public async Task ClickViewLinkAsync()
     {
-        // Locate elements
-        var statusLocator = _page.Locator("div.col-md-9 >> text='" + expectedStatus + "'");
-        var userLocator = _page.Locator("div.col-md-9 >> a[href*='/users/64']");
-        var modelLocator = _page.Locator("div.col-md-9 >> a[href*='/models/26']");
-        var historyLocator = _page.Locator("a[href='#history'] >> text='History'");
-
-        // Assert the status text matches the expected value
-        var statusText = await statusLocator.TextContentAsync();
-        Assert.That(statusText, Is.EqualTo(expectedStatus), $"Expected status '{expectedStatus}' but found '{statusText}'.");
-
-        // Assert the user text matches the expected value
-        var userText = await userLocator.TextContentAsync();
-        Assert.That(userText, Is.EqualTo(expectedUser), $"Expected user '{expectedUser}' but found '{userText}'.");
-
-        // Assert the model text matches the expected value
-        var modelText = await modelLocator.TextContentAsync();
-        Assert.That(modelText, Is.EqualTo(expectedModel), $"Expected model '{expectedModel}' but found '{modelText}'.");
-
-        // Assert the history text is present
-        var historyText = await historyLocator.TextContentAsync();
-        Assert.That(historyText, Is.EqualTo("History"), $"Expected 'History' but found '{historyText}'.");
-
-        // Click on the history link
-        await historyLocator.ClickAsync();
+        var viewLink = _page.Locator("a:has-text('Click here to view')");
+        await viewLink.ClickAsync();
     }
-
 
     // New method to assert user text and checkout text in history
     public async Task VerifyUserAndCheckoutTextAsync(string expectedUser, string expectedCheckoutText)
@@ -118,5 +113,4 @@ public class AssetPage
         var checkoutText = await checkoutTextLocator.TextContentAsync();
         Assert.That(checkoutText, Is.EqualTo(expectedCheckoutText), $"Expected '{expectedCheckoutText}' but found '{checkoutText}'.");
     }
-
 }
