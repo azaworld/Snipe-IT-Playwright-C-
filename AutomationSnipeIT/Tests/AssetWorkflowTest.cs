@@ -28,8 +28,11 @@ public class AssetWorkflowTest : PageTest
         await assetPage.SaveAssetAsync();
 
         // Step 4: Verify if the asset was created successfully
-        bool isAssetCreated = await assetPage.IsAssetCreatedAsync();
-        Assert.That(isAssetCreated, Is.True, "Asset was not created successfully.");
+        // bool isAssetCreated = await assetPage.IsAssetCreatedAsync();
+        // Assert.That(isAssetCreated, Is.True, "Asset was not created successfully.");
+
+        var successAlert = Page.Locator("div.alert.alert-success.fade.in");
+        await successAlert.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
 
         // Step 5: Extract Asset Tag and View Link
         var (assetTag, viewLink) = await assetPage.ExtractAssetTagAndUrlFromSuccessAlertAsync();

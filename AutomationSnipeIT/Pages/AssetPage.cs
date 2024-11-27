@@ -45,8 +45,8 @@ public class AssetPage
         // Assign user
         var userDropdown = _page.Locator("#select2-assigned_user_select-container");
         await userDropdown.ClickAsync();
-        await _page.Locator(".select2-search__field").FillAsync(userName);
-        await _page.Locator("li.select2-results__option", new() { HasText = userName }).ClickAsync();
+        await _page.Locator(".select2-search__field").FillAsync("Abc");
+        await _page.Locator("li.select2-results__option", new() { HasText = "Abc, Xyz (Abc)" }).ClickAsync();
     }
 
     public async Task SaveAssetAsync()
@@ -58,7 +58,7 @@ public class AssetPage
     public async Task<bool> IsAssetCreatedAsync()
     {
         var successAlert = _page.Locator("div.alert.alert-success.fade.in");
-        await successAlert.WaitForAsync(new() { State = WaitForSelectorState.Visible });
+        await successAlert.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
         return await successAlert.IsVisibleAsync();
     }
 
